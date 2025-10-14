@@ -1,0 +1,75 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+%\usepackage{helvet}
+%\renewcommand{\familydefault}{\sfdefault}
+\usepackage{fontspec}       % For system/OpenType fonts
+\setmainfont{Arial} 
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
+\usepackage{amsmath} % Added for \hrule
+\usepackage{array} % Added for 'p' column in tabular
+\usepackage{ragged2e} % For \RaggedRight to justify list items if needed (not strictly used here, but good for control)
+
+% Define new section format with bold title and a thin hrule
+% Space after the section title line is kept tight
+\titleformat{\section}[block]{\large\bfseries}{}{0em}{\hrule\vspace{0.2em}}
+% Vertical space before and after the section is kept tight
+\titlespacing*{\section}{0pt}{0.5em}{0.1em}
+
+\begin{document}
+
+%==================== Header ====================
+\noindent % Ensures content starts flush with the left margin
+{\Large \textbf{ {{ personal_info.name }} }} \\
+\small
+\href{mailto:{{ personal_info.email }}}{{ personal_info.email }} \textbar \
+{{ personal_info.phone }} \textbar \
+{{ personal_info.location }} \textbar \
+\href{https://{{ personal_info.linkedin }}}{LinkedIn} \textbar \
+\href{https://{{ personal_info.github }}}{GitHub}
+\vspace{0.2em}
+
+%==================== Experience ====================
+\section*{EXPERIENCE}
+{% for job in work %}
+% Dates are right-aligned
+\textbf{ {{ job.company }} } \hfill \textbf{ {{ job.dates }} } \\
+% Title left-aligned, location right-aligned
+{{ job.title }} \hfill {{ job.location }}\\[-0.3em]
+\begin{itemize}[leftmargin=1em, noitemsep, topsep=0pt, partopsep=0pt, parsep=0pt]
+{% for d in job.desc %}
+    \item {{ d }}
+{% endfor %}
+\end{itemize}\vspace{0.3em} % INCREASED: Changed from -0.5em to +0.3em to add a small gap after each job block
+{% endfor %}
+
+%==================== Education ====================
+\section*{EDUCATION}
+{% for edu in education %}
+% Years are right-aligned
+\textbf{ {{ edu.school }} } \hfill \textbf{ {{ edu.years }} } \\
+% Degree left-aligned, CGPA (if exists) right-aligned
+{{ edu.degree }}{% if edu.cgpa %} \hfill CGPA: {{ edu.cgpa }}{% endif %}\\[0.3em] % INCREASED: Changed from 0.1em to 0.3em to add a small gap after each education block
+{% endfor %}
+
+%==================== Projects ====================
+\section*{PROJECTS}
+{% for proj in projects %}
+\textbf{ {{ proj.title }} }\\[-0.3em]
+\begin{itemize}[leftmargin=1em, noitemsep, topsep=0pt, partopsep=0pt, parsep=0pt]
+{% for p in proj.desc %}
+    \item {{ p }}
+{% endfor %}
+\end{itemize}\vspace{0.3em} % INCREASED: Changed from -0.5em to +0.3em to add a small gap after each project block
+{% endfor %}
+
+%==================== Skills ====================
+\section*{SKILLS}
+{% for s in skills %}
+{{ s }}
+{% endfor %}
+
+\end{document}
