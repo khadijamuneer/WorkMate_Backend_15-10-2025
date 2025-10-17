@@ -3,7 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Replace values according to your setup
-DATABASE_URL = "postgresql://postgres:workmate@localhost/workmate"
+DATABASE_URL = "postgresql+psycopg://postgres:workmate@localhost/workmate"
+
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
