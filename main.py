@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from userprofile import router as profile_router   # âœ… Import the profile router
 from fastapi.responses import FileResponse
 from resume_builder.generator import generate_resume
-from resume_builder.routes import router as resume_router
+from resume_builder.routes import router as resume_generator_router
+from resume_upload.routes import router as resume_upload_router
 from jobs.routes import router as jobs_router
 
 import os 
@@ -73,6 +74,7 @@ async def generate_resume_endpoint(profile: dict):
         # Return 500 error if PDF generation fails
         raise HTTPException(status_code=500, detail=str(e))
 
-app.include_router(resume_router)
+app.include_router(resume_upload_router)
+app.include_router(resume_generator_router)
 
 app.include_router(jobs_router)
