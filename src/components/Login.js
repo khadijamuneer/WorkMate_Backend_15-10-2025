@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import axios from "axios";
+import wmLogo from "../assets/wm_logo.png"; // your logo
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -13,28 +14,23 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Step 1: Login request
       const res = await axios.post("http://127.0.0.1:8000/login", formData);
       const token = res.data.access_token;
 
-      // Step 2: Save token and email in local storage
       localStorage.setItem("token", token);
       localStorage.setItem("email", formData.email);
       setMessage("Login successful!");
 
-      // Step 3: Check if profile exists
       try {
         const profileRes = await axios.get(
-          `http://127.0.0.1:8000/profile/${formData.email}`, 
+          `http://127.0.0.1:8000/profile/${formData.email}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (profileRes.status === 200) {
-          // ✅ Profile exists → redirect to profile page
           window.location.href = "/profile";
         }
       } catch (error) {
-        // ❌ Profile not found → redirect to create/edit page
         if (error.response && error.response.status === 404) {
           window.location.href = "/edit-profile";
         } else {
@@ -47,27 +43,97 @@ const Login = () => {
     }
   };
 
+  // Styles as JS objects
+  const styles = {
+    container: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      backgroundColor: "#f0f0f0",
+      padding: "20px",
+    },
+    card: {
+      width: "100%",
+      maxWidth: "400px",
+      padding: "40px",
+      backgroundColor: "#fff",
+      borderRadius: "16px",
+      boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+      textAlign: "center",
+    },
+    logo: {
+      height: "60px",
+      marginBottom: "30px",
+    },
+    input: {
+      width: "100%",
+      padding: "12px 15px",
+      marginBottom: "20px",
+      borderRadius: "10px",
+      border: "1px solid #d1d5db",
+      fontSize: "1rem",
+      boxSizing: "border-box",
+
+    },
+    button: {
+      width: "100%",
+      padding: "12px",
+      borderRadius: "10px",
+      border: "none",
+      backgroundColor: "#4f46e5",
+      color: "#fff",
+      fontWeight: "600",
+      fontSize: "1rem",
+      cursor: "pointer",
+      marginBottom: "15px",
+    },
+    linkText: {
+      fontSize: "0.9rem",
+      color: "#6b7280", // grey color
+      cursor: "pointer",
+      textDecoration: "underline",
+    },
+    message: {
+      marginTop: "15px",
+      color: "red",
+      fontSize: "0.9rem",
+    },
+  };
+
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          onChange={handleChange}
-          required
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Login</button>
-      </form>
-      <p>{message}</p>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <img src={wmLogo} alt="WorkMate Logo" style={styles.logo} />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <button type="submit" style={styles.button}>
+            Login
+          </button>
+        </form>
+        <div
+          style={styles.linkText}
+          onClick={() => (window.location.href = "/signup")}
+        >
+          Don't have an account? Sign up
+        </div>
+        {message && <div style={styles.message}>{message}</div>}
+      </div>
     </div>
   );
 };
