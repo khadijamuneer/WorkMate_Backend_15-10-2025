@@ -8,6 +8,8 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile"; // ✅ new import
 import JobsPage from "./pages/JobsPages";
 import ResumePage from "./pages/ResumePage"
+import ResumeUpload from "./pages/ResumeUpload"
+
 
 
 
@@ -20,8 +22,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/edit-profile" element={<EditProfile />} /> {/* ✅ new */}
-        <Route path="/resume" element={<ResumePage />} />
+        <Route path="/resume-generator" element={<ResumePage />} />
         <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/resume" element={<ResumeUpload />} /> 
       </Routes>
     </Router>
   );
