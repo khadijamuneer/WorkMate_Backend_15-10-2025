@@ -6,6 +6,15 @@ from database import SessionLocal
 from sqlalchemy.orm import Session
 from datetime import date
 
+
+from fastapi import Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+from database import get_db
+from models import JobScraped, Profile
+from .matcher import match_jobs
+
+
+
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 @router.get("/search")
@@ -49,3 +58,40 @@ def search_jobs(query: str = Query(..., description="Job title or keywords")):
 
     finally:
         db.close()
+
+
+
+@router.get("/match")
+def get_matched_jobs(email: str = Query(..., description="User email"), db: Session = Depends(get_db)):
+    # Fetch user profile
+    profile = db.query(Profile).filter(Profile.user_email == email).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Fetch all scraped jobs
+    jobs_orm = db.query(JobScraped).all()
+    if not jobs_orm:
+        return {"count": 0, "jobs": []}
+
+    # Convert ORM objects to dicts for matcher
+    jobs = []
+    for job in jobs_orm:
+        jobs.append({
+            "title": job.title,
+            "company": job.company,
+            "location": job.location,
+            "link": job.link,
+            "preview_desc": job.preview_desc,
+            "description": job.full_desc or job.preview_desc or "",
+            "skills": job.skills or [],
+            "date_posted": job.date_posted
+        })
+
+
+    user_data = {
+        "skills": profile.skills or [],
+        "projects": profile.projects or []
+    }
+
+    matched = match_jobs(user_data, jobs)
+    return {"count": len(matched), "jobs": matched}
