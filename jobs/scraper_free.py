@@ -1,4 +1,4 @@
-
+#this was working without captcha
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -81,3 +81,4 @@ def scrape_jobs(query):
         driver.quit()
 
     return jobs
+
