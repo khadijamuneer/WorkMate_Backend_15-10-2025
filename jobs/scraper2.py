@@ -1,3 +1,4 @@
+# this scraper works for both rozee and bayt, rozee without captcha
 # jobs/scraper.py
 from bs4 import BeautifulSoup
 from selenium import webdriver
