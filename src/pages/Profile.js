@@ -101,12 +101,11 @@ const Profile = () => {
     value: {
       color: "#000",
     },
-    // 🔹 BUTTON COLOR & ROUNDNESS — adjust here
     linkBtn: {
       backgroundColor: "#3b4bff",
       color: "#fff",
       padding: "6px 16px",
-      borderRadius: "12px", // 🔹 Increase or decrease roundness here
+      borderRadius: "12px",
       border: "none",
       cursor: "pointer",
       fontSize: "0.9rem",
@@ -242,6 +241,39 @@ const Profile = () => {
                 </ul>
               </div>
             ))}
+
+            {/* Skills */}
+            <div style={styles.sectionTitleRow}>
+              <h3 style={styles.sectionTitle}>Skills</h3>
+            </div>
+            {profile.skills && profile.skills.length > 0 ? (
+              <ul
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "0.5rem",
+                  paddingLeft: 0,
+                }}
+              >
+                {profile.skills.map((skill, i) => (
+                  <li
+                    key={i}
+                    style={{
+                      listStyle: "none",
+                      backgroundColor: "#f5f6ff",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      color: "#3b4bff",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {skill}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>-</p>
+            )}
           </>
         ) : (
           !message && <p>Loading profile...</p>
