@@ -1,0 +1,145 @@
+# jobs/matcher.py
+from huggingface_hub import snapshot_download
+from sentence_transformers import SentenceTransformer, util
+import spacy
+import re
+
+# ---------------------------------------
+# Load SKILL EXTRACTOR MODEL
+# ---------------------------------------
+model_path = snapshot_download("amjad-awad/skill-extractor", repo_type="model")
+nlp = spacy.load(model_path)
+
+# ---------------------------------------
+# Load small fast embedding model
+# ---------------------------------------
+embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+
+# ---------------------------------------
+# Skill extraction
+# ---------------------------------------
+def extract_skills(text):
+    doc = nlp(text)
+    return list({ent.text.lower() for ent in doc.ents if "SKILLS" in ent.label_})
+
+
+# ---------------------------------------
+# Experience estimation
+# ---------------------------------------
+def infer_experience_level(text):
+    exp_levels = {
+        "intern": 0.2,
+        "junior": 0.5,
+        "associate": 0.6,
+        "mid": 0.7,
+        "senior": 0.9,
+        "lead": 1.0
+    }
+    text = text.lower()
+    for keyword, value in exp_levels.items():
+        if re.search(rf"\b{keyword}\b", text):
+            return value
+    return 0.7  # assume mid if unspecified
+
+
+def clean_skill(skill):
+    return skill.strip().strip('"').lower()
+
+
+# ---------------------------------------
+# MAIN MATCH FUNCTION
+# ---------------------------------------
+def match_jobs(user, jobs):
+
+    # --- Build user's combined text for embeddings ---
+    user_skills = set(skill.lower() for skill in user.get("skills", []))
+
+    user_projects_text = " ".join(
+        " ".join(p.get("desc", [])) if isinstance(p, dict) else str(p)
+        for p in user.get("projects", [])
+    )
+
+    user_profile_text = (
+        "Skills: " + ", ".join(user_skills) + ". "
+        "Projects: " + user_projects_text
+    )
+
+    # Pre-compute user embedding
+    user_emb = embedder.encode(user_profile_text, convert_to_tensor=True)
+
+    # Skill extraction + experience level
+    user_extracted = set(extract_skills(user_projects_text))
+    user_exp = infer_experience_level(user_projects_text)
+
+    matched_jobs = []
+
+    for job in jobs:
+
+        # Job text
+        job_desc = job.get("description") or ""
+        job_profile_text = (
+            "Skills: " + ", ".join(job.get("skills") or []) + ". "
+            "Description: " + job_desc
+        )
+
+        # Compute embedding similarity
+        job_emb = embedder.encode(job_profile_text, convert_to_tensor=True)
+        cosine_sim = util.cos_sim(user_emb, job_emb).item()  # returns a float
+
+        # Normalize cosine to 0–1 instead of -1 to 1
+        cosine_normalized = (cosine_sim + 1) / 2
+
+        # Skill matching logic (KEEPING your original weights)
+        job_skills = set(skill.lower() for skill in (job.get("skills") or []))
+        job_extracted = set(extract_skills(job_desc))
+        job_exp = infer_experience_level(job_desc)
+
+        explicit_skill_match = (
+            len(user_skills & job_skills) / len(job_skills) if job_skills else 0
+        )
+
+        extracted_skill_match = (
+            len(user_extracted & job_extracted) / len(job_extracted)
+            if job_extracted else 0
+        )
+
+        exp_match = 1 - abs(user_exp - job_exp)
+
+        # -------------------------
+        # NEW FINAL SCORE WITH EMBEDDINGS
+        # -------------------------
+        # You can tune these weights
+        final_score = (
+            0.5 * cosine_normalized +     # semantic similarity
+            0.3 * explicit_skill_match +  # exact skill match
+            0.1 * extracted_skill_match + # NLP skill extraction match
+            0.1 * exp_match               # experience match
+        )
+
+        # Debug logs
+        print("JOB:", job.get("title"))
+        print("Cosine Similarity Raw:", round(cosine_sim, 3))
+        print("Cosine Normalized:", round(cosine_normalized, 3))
+        print("Explicit Skill Match:", explicit_skill_match)
+        print("Extracted Skill Match:", extracted_skill_match)
+        print("Experience Match:", exp_match)
+        print("Final Score:", round(final_score, 3))
+        print("-" * 60)
+
+        matched_jobs.append({
+            "id": job.get("id"),
+            "title": job.get("title"),
+            "company": job.get("company"),
+            "location": job.get("location"),
+            "link": job.get("link"),
+            "preview_desc": job.get("preview_desc"),
+            "full_desc": job_desc,
+            "skills": job.get("skills") or [],
+            "date_posted": job.get("date_posted"),
+            "score": round(final_score, 3),
+            "cosine_similarity": round(cosine_normalized, 3)
+        })
+
+    matched_jobs.sort(key=lambda x: x["score"], reverse=True)
+    return matched_jobs
