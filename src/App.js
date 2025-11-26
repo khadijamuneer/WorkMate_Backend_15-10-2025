@@ -9,6 +9,8 @@ import EditProfile from "./pages/EditProfile"; // ✅ new import
 import JobsPage from "./pages/JobsPages";
 import ResumePage from "./pages/ResumePage"
 import ResumeUpload from "./pages/ResumeUpload"
+import TailorResumePage from "./pages/TailorResumePage";
+
 
 
 
@@ -25,6 +27,7 @@ function App() {
         <Route path="/resume-generator" element={<ResumePage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/resume" element={<ResumeUpload />} /> 
+        <Route path="/tailor-resume" element={<TailorResumePage />} />
       </Routes>
     </Router>
   );
