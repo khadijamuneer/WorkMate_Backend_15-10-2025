@@ -10,6 +10,8 @@ import JobsPage from "./pages/JobsPages";
 import ResumePage from "./pages/ResumePage"
 import ResumeUpload from "./pages/ResumeUpload"
 import TailorResumePage from "./pages/TailorResumePage";
+import InterviewMode from "./pages/InterviewMode";
+import TextInterview from "./pages/TextInterview";
 
 
 
@@ -28,6 +30,8 @@ function App() {
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/resume" element={<ResumeUpload />} /> 
         <Route path="/tailor-resume" element={<TailorResumePage />} />
+        <Route path="/interview" element={<InterviewMode/>}/>
+        <Route path="/text-interview" element={<TextInterview />} />
       </Routes>
     </Router>
   );
