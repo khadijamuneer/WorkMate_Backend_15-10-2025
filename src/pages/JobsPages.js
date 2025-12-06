@@ -374,6 +374,12 @@ const JobsPage = () => {
                   >
                     🎯 Tailor Resume
                   </button>
+
+                  <button
+                    style={{...styles.tailorBtn,backgroundColor:"#3b4bff",}}  
+                    onClick={() =>navigate("/interview",{state:{job},})}>
+                     💬 Prepare Interview
+                    </button>
                 </div>
               </div>
             ))}
