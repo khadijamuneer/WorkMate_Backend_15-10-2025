@@ -12,7 +12,7 @@ from resume_builder.routes import router as resume_generator_router
 from resume_upload.routes import router as resume_upload_router
 from jobs.routes import router as jobs_router
 from resume_tailoring.routes import router as tailor_router
-
+from text_interview.routes import router as text_interview_router
 
 import os 
 
@@ -82,3 +82,5 @@ app.include_router(resume_generator_router)
 app.include_router(jobs_router)
 
 app.include_router(tailor_router)
+
+app.include_router(text_interview_router, prefix="/interview", tags=["Interview"])
