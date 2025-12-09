@@ -3,6 +3,9 @@ from typing import Dict
 from sqlalchemy.orm import Session
 import sys
 import os
+from groq import Groq
+from dotenv import load_dotenv
+
 
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,9 +16,15 @@ from models import Profile
 
 router = APIRouter(prefix="/tailor", tags=["Resume Tailoring"])
 
-# You'll need to set your Groq API key as an environment variable
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+load_dotenv()
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY_TAILORING")
+
+if not GROQ_API_KEY:
+    raise ValueError("Missing GROQ_API_KEY_TAILORING")
+
+client = Groq(api_key=GROQ_API_KEY)
 
 @router.post("/resume")
 async def tailor_resume_endpoint(request: Dict, db: Session = Depends(get_db)):
