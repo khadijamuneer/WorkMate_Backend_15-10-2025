@@ -1,5 +1,4 @@
 # jobs/matcher.py
-#matcher code with BERT model implemented
 from huggingface_hub import snapshot_download
 from sentence_transformers import SentenceTransformer, util
 import spacy
@@ -52,7 +51,18 @@ def clean_skill(skill):
 # MAIN MATCH FUNCTION
 # ---------------------------------------
 def match_jobs(user, jobs):
+    # ---------------------------------------
+    # NEW CHECK → If user has no skills, stop early
+    # ---------------------------------------
+    user_skills = set(skill.lower() for skill in user.get("skills", []))
 
+    if not user_skills:
+        return [{
+            "error": "Please add skills to your profile to find job matches."
+        }]
+    
+
+    
     # --- Build user's combined text for embeddings ---
     user_skills = set(skill.lower() for skill in user.get("skills", []))
 
