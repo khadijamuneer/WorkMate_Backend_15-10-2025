@@ -5,11 +5,25 @@ from groq import Groq
 import json
 from database import get_db
 from models import Profile
+from dotenv import load_dotenv
+import os 
+
 
 router = APIRouter()
 
 # Initialize Groq client
-client = Groq(api_key="")
+
+
+
+load_dotenv()
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY_TEXTINTERVIEW")
+
+if not GROQ_API_KEY:
+    raise ValueError("Missing GROQ_API_KEY_INTERVIEW")
+
+client = Groq(api_key=GROQ_API_KEY)
+
 
 class InterviewRequest(BaseModel):
     email: str
