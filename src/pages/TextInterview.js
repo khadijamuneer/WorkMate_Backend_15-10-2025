@@ -53,16 +53,54 @@ function TextInterview() {
     fetchQuestions();
   }, [job]);
 
+  // ---------------------------
+  // NEXT QUESTION (save answer)
+  // ---------------------------
   const handleNext = () => {
-    const updated = [...answers, { question: questions[currentIndex], answer }];
+    const updated = [
+      ...answers,
+      { question: questions[currentIndex], answer }
+    ];
+
     setAnswers(updated);
     setAnswer("");
-    
+
     if (currentIndex === questions.length - 1) {
       setFinished(true);
     } else {
       setCurrentIndex(currentIndex + 1);
     }
+  };
+
+  // ---------------------------
+  // SKIP QUESTION (save nothing)
+  // ---------------------------
+  const handleSkip = () => {
+    setAnswer("");
+
+    if (currentIndex === questions.length - 1) {
+      setFinished(true);
+    } else {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  // ---------------------------
+  // FINISH INTERVIEW
+  // (optional: save partially typed answer)
+  // ---------------------------
+  const handleFinish = () => {
+    let updated = [...answers];
+
+    if (answer.trim()) {
+      updated.push({
+        question: questions[currentIndex],
+        answer
+      });
+    }
+
+    setAnswers(updated);
+    setFinished(true);
   };
 
   return (
@@ -109,6 +147,8 @@ function TextInterview() {
               />
 
               <div style={styles.buttonContainer}>
+
+                {/* NEXT QUESTION (disabled if empty) */}
                 <button 
                   style={{
                     ...styles.button,
@@ -118,31 +158,34 @@ function TextInterview() {
                   }}
                   onClick={handleNext}
                   disabled={!answer.trim()}
-                  onMouseEnter={(e) => {
-                    if (answer.trim()) e.target.style.backgroundColor = "#3338cc";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (answer.trim()) e.target.style.backgroundColor = "#3b4bff";
-                  }}
                 >
                   <span style={styles.buttonIcon}>⏭</span>
-                  {currentIndex === questions.length - 1 ? "Finish Interview" : "Next Question"}
+                  Next Question
                 </button>
 
+                {/* SKIP QUESTION (always active) */}
+                <button 
+                  style={{...styles.button, ...styles.skipButton}}
+                  onClick={handleSkip}
+                >
+                  <span style={styles.buttonIcon}>✘</span>
+                  Skip Question
+                </button>
+
+                {/* FINISH INTERVIEW */}
                 <button 
                   style={{...styles.button, ...styles.finishButton}}
-                  onClick={() => setFinished(true)}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = "#4b5563"}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = "#6b7280"}
+                  onClick={handleFinish}
                 >
                   <span style={styles.buttonIcon}>✓</span>
                   Finish Interview
                 </button>
+
               </div>
             </div>
           </div>
         )}
-        
+
         {finished && (
           <div style={styles.completionContainer}>
             <div style={styles.successIcon}>🎉</div>
