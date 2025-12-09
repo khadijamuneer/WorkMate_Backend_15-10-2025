@@ -10,14 +10,25 @@ from groq import Groq
 from datetime import datetime
 import json
 import os
+from dotenv import load_dotenv
+from auth import get_current_user
+from models import User 
 
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
 # -------------------------
 # Groq Client (LLM)
 # -------------------------
-GROQ_API_KEY = ""
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY_RESUME_UPLOAD")
+
+if not GROQ_API_KEY:
+    raise ValueError("Missing GROQ_API_KEY_RESUME_UPLOAD")
+
 client = Groq(api_key=GROQ_API_KEY)
+
+
+
 
 # -------------------------
 # Prompt engineering (carefully crafted)
@@ -103,8 +114,10 @@ def extract_text_from_docx(path):
 def autofill_profile(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user_email: str = "khadijamuneer33@gmail.com"
+    current_user: User = Depends(get_current_user)  # <-- actual logged-in user
 ):
+    current_user_email = current_user.email  # use this for all profile updates
+
     if not file.filename.lower().endswith((".pdf", ".docx")):
         raise HTTPException(status_code=400, detail="Unsupported file type")
 
@@ -152,7 +165,7 @@ def autofill_profile(
 
         # Prepare profile data
         personal_info_dict = parsed["personal_info"]
-        personal_info_dict["email"] = personal_info_dict.get("email", current_user_email)
+        personal_info_dict["email"] = current_user_email
 
         skills_list = []
         if parsed["skills"] and parsed["skills"][0] != "not available":
