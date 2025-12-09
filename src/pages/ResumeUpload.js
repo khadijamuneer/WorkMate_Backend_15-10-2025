@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 
 function ResumeUpload() {
   const [file, setFile] = useState(null);
-  const [extractedText, setExtractedText] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -12,9 +11,19 @@ function ResumeUpload() {
     setFile(e.target.files[0]);
   };
 
-  const handleUpload = async () => {
+  // -----------------------------
+  // Handle Autofill Profile
+  // -----------------------------
+  const handleAutofill = async () => {
     if (!file) {
       alert("Please select a PDF or DOCX file first.");
+      return;
+    }
+
+    const token = localStorage.getItem("token"); // get token
+
+    if (!token) {
+      alert("Please login first.");
       return;
     }
 
@@ -24,16 +33,20 @@ function ResumeUpload() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/resume/upload", {
+      const response = await fetch("http://127.0.0.1:8000/resume/autofill", {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`, // <-- send token
+        },
       });
 
       const data = await response.json();
       if (response.ok) {
-        setExtractedText(data.extracted_text);
+        alert(data.detail); // "Profile filled successfully"
+        navigate("/profile"); // Auto-navigate to profile page
       } else {
-        alert(data.detail || "Failed to process file");
+        alert(data.detail || "Failed to autofill profile");
       }
     } catch (err) {
       alert("Error uploading file.");
@@ -42,7 +55,9 @@ function ResumeUpload() {
     }
   };
 
-  // ✨ Styling
+  // -----------------------------
+  // Styling
+  // -----------------------------
   const styles = {
     layout: {
       display: "flex",
@@ -97,16 +112,6 @@ function ResumeUpload() {
       minWidth: "160px",
       transition: "background 0.2s ease",
     },
-    textContainer: {
-      marginTop: "1rem",
-      textAlign: "left",
-      maxHeight: "400px",
-      overflowY: "auto",
-      backgroundColor: "#f9faff",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      padding: "1rem",
-    },
   };
 
   return (
@@ -121,7 +126,9 @@ function ResumeUpload() {
           {file ? (
             <>
               <strong>{file.name}</strong>
-              <span style={{ fontSize: "0.9rem", color: "#555" }}>Click to change</span>
+              <span style={{ fontSize: "0.9rem", color: "#555" }}>
+                Click to change
+              </span>
             </>
           ) : (
             <span>Select PDF/DOCX file</span>
@@ -137,14 +144,14 @@ function ResumeUpload() {
         {/* Buttons */}
         <div style={styles.buttonRow}>
           <button
-            onClick={handleUpload}
+            onClick={handleAutofill}
             disabled={loading}
             style={{
               ...styles.blueButton,
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Extracting..." : "Extract"}
+            {loading ? "Filling Profile..." : "Autofill My Profile"}
           </button>
 
           <button
@@ -154,16 +161,6 @@ function ResumeUpload() {
             Optimize Resume
           </button>
         </div>
-
-        {/* Extracted text display */}
-        {extractedText && (
-          <div style={styles.textContainer}>
-            <h3 style={{ color: "#3b4bff", marginBottom: "0.5rem" }}>Extracted Text:</h3>
-            <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
-              {extractedText}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );
