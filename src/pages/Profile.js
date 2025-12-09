@@ -1,3 +1,4 @@
+//work 9-12-2025
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +20,7 @@ const Profile = () => {
       }
 
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/profile/${email}`, {
+        const res = await axios.get(`http://127.0.0.1:8000/profile/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(res.data);
