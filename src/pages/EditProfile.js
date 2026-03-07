@@ -7,18 +7,11 @@ const months = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
-const years = Array.from({ length: 27 }, (_, i) => 2000 + i); // 2000–2026
+const years = Array.from({ length: 27 }, (_, i) => 2000 + i);
 
 const EditProfile = () => {
   const [formData, setFormData] = useState({
-    personal_info: {
-      name: "",
-      email: "",
-      phone: "",
-      location: "",
-      linkedin: "",
-      github: "",
-    },
+    personal_info: { name: "", email: "", phone: "", location: "", linkedin: "", github: "" },
     skills: [],
     education: [{ school: "", degree: "", startYear: "", endYear: "", present: false, cgpa: "" }],
     work: [{
@@ -33,18 +26,16 @@ const EditProfile = () => {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
-  const email = localStorage.getItem("email");
 
-  // 🧭 Fetch profile
+  // Fetch profile using the correct GET /profile/ endpoint (auth-based, no email in URL)
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/profile/${email}`, {
+        const res = await axios.get("http://127.0.0.1:8000/profile/", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const profile = res.data;
 
-        // Parse existing education/work dates
         const education = profile.education?.map((edu) => {
           const [start, end] = edu.years?.split("-") || ["", ""];
           return {
@@ -67,29 +58,22 @@ const EditProfile = () => {
         }) || [];
 
         setFormData({ ...profile, education, work });
-        setWorkDescInputs(work.map((w) => w.desc.join(", ")));
-        setProjectDescInputs(profile.projects?.map((p) => p.desc.join(", ")) || [""]);
+        setWorkDescInputs(work.map((w) => w.desc?.join(", ") || ""));
+        setProjectDescInputs(profile.projects?.map((p) => p.desc?.join(", ") || "") || [""]);
       } catch {
-        console.log("No existing profile found.");
+        console.log("No existing profile found, starting fresh.");
       }
     };
     fetchProfile();
-  }, [email, token]);
+  }, [token]);
 
-  // Handlers
   const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      personal_info: { ...formData.personal_info, [name]: value },
-    });
+    setFormData({ ...formData, personal_info: { ...formData.personal_info, [name]: value } });
   };
 
   const handleSkillsChange = (e) => {
-    setFormData({
-      ...formData,
-      skills: e.target.value.split(",").map((s) => s.trim()),
-    });
+    setFormData({ ...formData, skills: e.target.value.split(",").map((s) => s.trim()) });
   };
 
   const handleEducationChange = (i, field, value) => {
@@ -102,6 +86,12 @@ const EditProfile = () => {
     const updated = [...formData.work];
     updated[i][field] = value;
     setFormData({ ...formData, work: updated });
+  };
+
+  const handleProjectChange = (i, field, value) => {
+    const updated = [...formData.projects];
+    updated[i][field] = value;
+    setFormData({ ...formData, projects: updated });
   };
 
   const handleAddField = (section) => {
@@ -150,89 +140,52 @@ const EditProfile = () => {
     };
 
     try {
-      await axios.put(`http://127.0.0.1:8000/profile/${email}`, cleanedData, {
+      // Try update first (profile already exists)
+      await axios.put("http://127.0.0.1:8000/profile/", cleanedData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage("✅ Profile updated successfully!");
       navigate("/profile");
-    } catch {
-      await axios.post("http://127.0.0.1:8000/profile/", cleanedData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setMessage("🎉 Profile created successfully!");
-      navigate("/profile");
+    } catch (putErr) {
+      if (putErr.response?.status === 404) {
+        // Profile doesn't exist yet — create it
+        try {
+          await axios.post("http://127.0.0.1:8000/profile/", cleanedData, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setMessage("🎉 Profile created successfully!");
+          navigate("/profile");
+        } catch (postErr) {
+          setMessage("❌ Failed to create profile. Please try again.");
+          console.error(postErr);
+        }
+      } else {
+        setMessage("❌ Failed to update profile. Please try again.");
+        console.error(putErr);
+      }
     }
   };
 
-  // ✨ Theme styles
   const styles = {
-    layout: {
-      display: "flex",
-      minHeight: "100vh",
-      fontFamily: "'Inter', sans-serif",
-      backgroundColor: "#f8f9fb",
-    },
-    main: {
-      flex: 1,
-      backgroundColor: "#fff",
-      padding: "3rem 4rem",
-    },
-    heading: {
-      borderBottom: "1px solid #ccc",
-      paddingBottom: "0.3rem",
-      marginBottom: "1rem",
-      color: "#3b4bff",
-    },
+    layout: { display: "flex", minHeight: "100vh", fontFamily: "'Inter', sans-serif", backgroundColor: "#f8f9fb" },
+    main: { flex: 1, backgroundColor: "#fff", padding: "3rem 4rem" },
+    heading: { borderBottom: "1px solid #ccc", paddingBottom: "0.3rem", marginBottom: "1rem", color: "#3b4bff" },
     section: { marginBottom: "1.5rem" },
-    input: {
-      display: "block",
-      marginBottom: "0.7rem",
-      width: "100%",
-      padding: "0.5rem",
-      border: "1px solid #ccc",
-      borderRadius: "8px",
-      fontSize: "1rem",
-    },
-    select: {
-      padding: "0.4rem",
-      borderRadius: "8px",
-      border: "1px solid #ccc",
-      fontSize: "1rem",
-      color: "#333",
-      backgroundColor: "#f9faff",
-    },
-    addBtn: {
-      backgroundColor: "#e7e9ff",
-      color: "#3b4bff",
-      border: "none",
-      padding: "6px 10px",
-      borderRadius: "8px",
-      cursor: "pointer",
-      marginBottom: "1rem",
-    },
-    saveBtn: {
-      backgroundColor: "#3b4bff",
-      color: "#fff",
-      border: "none",
-      padding: "10px 18px",
-      borderRadius: "10px",
-      cursor: "pointer",
-      fontSize: "1rem",
-    },
+    input: { display: "block", marginBottom: "0.7rem", width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "8px", fontSize: "1rem" },
+    select: { padding: "0.4rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "1rem", color: "#333", backgroundColor: "#f9faff" },
+    addBtn: { backgroundColor: "#e7e9ff", color: "#3b4bff", border: "none", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", marginBottom: "1rem" },
+    saveBtn: { backgroundColor: "#3b4bff", color: "#fff", border: "none", padding: "10px 18px", borderRadius: "10px", cursor: "pointer", fontSize: "1rem" },
   };
 
   return (
     <div style={styles.layout}>
       <Sidebar profile={formData} onLogout={() => navigate("/login")} />
-
       <div style={styles.main}>
-        <h2 style={styles.heading}>
-          {formData.id ? "Edit Profile" : "Create Profile"}
-        </h2>
+        <h2 style={styles.heading}>{formData.id ? "Edit Profile" : "Create Profile"}</h2>
         {message && <p>{message}</p>}
 
         <form onSubmit={handleSubmit}>
-          {/* ---------- Personal Info ---------- */}
+          {/* Personal Info */}
           <div style={styles.section}>
             <h3 style={{ color: "#3b4bff" }}>Personal Information</h3>
             {Object.keys(formData.personal_info).map((key) => (
@@ -248,7 +201,7 @@ const EditProfile = () => {
             ))}
           </div>
 
-          {/* ---------- Skills ---------- */}
+          {/* Skills */}
           <div style={styles.section}>
             <h3 style={{ color: "#3b4bff" }}>Skills</h3>
             <input
@@ -259,165 +212,79 @@ const EditProfile = () => {
             />
           </div>
 
-          {/* ---------- Education ---------- */}
+          {/* Education */}
           <div style={styles.section}>
             <h3 style={{ color: "#3b4bff" }}>Education</h3>
             {formData.education.map((edu, i) => (
               <div key={i} style={{ marginBottom: "1rem" }}>
-                <input
-                  placeholder="School"
-                  value={edu.school}
-                  onChange={(e) => handleEducationChange(i, "school", e.target.value)}
-                  style={styles.input}
-                />
-                <input
-                  placeholder="Degree"
-                  value={edu.degree}
-                  onChange={(e) => handleEducationChange(i, "degree", e.target.value)}
-                  style={styles.input}
-                />
+                <input placeholder="School" value={edu.school} onChange={(e) => handleEducationChange(i, "school", e.target.value)} style={styles.input} />
+                <input placeholder="Degree" value={edu.degree} onChange={(e) => handleEducationChange(i, "degree", e.target.value)} style={styles.input} />
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <select
-                    style={styles.select}
-                    value={edu.startYear}
-                    onChange={(e) => handleEducationChange(i, "startYear", e.target.value)}
-                  >
+                  <select style={styles.select} value={edu.startYear} onChange={(e) => handleEducationChange(i, "startYear", e.target.value)}>
                     <option value="">Start Year</option>
                     {years.map((y) => <option key={y}>{y}</option>)}
                   </select>
                   <span>-</span>
-                  <select
-                    style={styles.select}
-                    value={edu.endYear}
-                    onChange={(e) => handleEducationChange(i, "endYear", e.target.value)}
-                    disabled={edu.present}
-                  >
+                  <select style={styles.select} value={edu.endYear} onChange={(e) => handleEducationChange(i, "endYear", e.target.value)} disabled={edu.present}>
                     <option value="">End Year</option>
                     {years.map((y) => <option key={y}>{y}</option>)}
                   </select>
                   <label style={{ marginLeft: "0.5rem" }}>
-                    <input
-                      type="checkbox"
-                      checked={edu.present}
-                      onChange={(e) => handleEducationChange(i, "present", e.target.checked)}
-                    /> Present
+                    <input type="checkbox" checked={edu.present} onChange={(e) => handleEducationChange(i, "present", e.target.checked)} /> Present
                   </label>
                 </div>
-                <input
-                  placeholder="CGPA"
-                  value={edu.cgpa}
-                  onChange={(e) => handleEducationChange(i, "cgpa", e.target.value)}
-                  style={styles.input}
-                />
+                <input placeholder="CGPA" value={edu.cgpa} onChange={(e) => handleEducationChange(i, "cgpa", e.target.value)} style={styles.input} />
               </div>
             ))}
-            <button type="button" onClick={() => handleAddField("education")} style={styles.addBtn}>
-              + Add Education
-            </button>
+            <button type="button" onClick={() => handleAddField("education")} style={styles.addBtn}>+ Add Education</button>
           </div>
 
-          {/* ---------- Work Experience ---------- */}
+          {/* Work Experience */}
           <div style={styles.section}>
             <h3 style={{ color: "#3b4bff" }}>Work Experience</h3>
             {formData.work.map((job, i) => (
               <div key={i} style={{ marginBottom: "1rem" }}>
-                <input
-                  placeholder="Title"
-                  value={job.title}
-                  onChange={(e) => handleWorkChange(i, "title", e.target.value)}
-                  style={styles.input}
-                />
-                <input
-                  placeholder="Company"
-                  value={job.company}
-                  onChange={(e) => handleWorkChange(i, "company", e.target.value)}
-                  style={styles.input}
-                />
-                <input
-                  placeholder="Location"
-                  value={job.location}
-                  onChange={(e) => handleWorkChange(i, "location", e.target.value)}
-                  style={styles.input}
-                />
+                <input placeholder="Title" value={job.title} onChange={(e) => handleWorkChange(i, "title", e.target.value)} style={styles.input} />
+                <input placeholder="Company" value={job.company} onChange={(e) => handleWorkChange(i, "company", e.target.value)} style={styles.input} />
+                <input placeholder="Location" value={job.location} onChange={(e) => handleWorkChange(i, "location", e.target.value)} style={styles.input} />
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <select
-                    style={styles.select}
-                    value={job.startMonth}
-                    onChange={(e) => handleWorkChange(i, "startMonth", e.target.value)}
-                  >
+                  <select style={styles.select} value={job.startMonth} onChange={(e) => handleWorkChange(i, "startMonth", e.target.value)}>
                     <option value="">Start Month</option>
                     {months.map((m) => <option key={m}>{m}</option>)}
                   </select>
-                  <select
-                    style={styles.select}
-                    value={job.startYear}
-                    onChange={(e) => handleWorkChange(i, "startYear", e.target.value)}
-                  >
+                  <select style={styles.select} value={job.startYear} onChange={(e) => handleWorkChange(i, "startYear", e.target.value)}>
                     <option value="">Year</option>
                     {years.map((y) => <option key={y}>{y}</option>)}
                   </select>
                   <span>-</span>
-                  <select
-                    style={styles.select}
-                    value={job.endMonth}
-                    onChange={(e) => handleWorkChange(i, "endMonth", e.target.value)}
-                    disabled={job.present}
-                  >
+                  <select style={styles.select} value={job.endMonth} onChange={(e) => handleWorkChange(i, "endMonth", e.target.value)} disabled={job.present}>
                     <option value="">End Month</option>
                     {months.map((m) => <option key={m}>{m}</option>)}
                   </select>
-                  <select
-                    style={styles.select}
-                    value={job.endYear}
-                    onChange={(e) => handleWorkChange(i, "endYear", e.target.value)}
-                    disabled={job.present}
-                  >
+                  <select style={styles.select} value={job.endYear} onChange={(e) => handleWorkChange(i, "endYear", e.target.value)} disabled={job.present}>
                     <option value="">Year</option>
                     {years.map((y) => <option key={y}>{y}</option>)}
                   </select>
                   <label style={{ marginLeft: "0.5rem" }}>
-                    <input
-                      type="checkbox"
-                      checked={job.present}
-                      onChange={(e) => handleWorkChange(i, "present", e.target.checked)}
-                    /> Present
+                    <input type="checkbox" checked={job.present} onChange={(e) => handleWorkChange(i, "present", e.target.checked)} /> Present
                   </label>
                 </div>
-                <input
-                  placeholder="Description (comma separated)"
-                  value={workDescInputs[i] || ""}
-                  onChange={(e) => handleWorkDescChange(e, i)}
-                  style={styles.input}
-                />
+                <input placeholder="Description (comma separated)" value={workDescInputs[i] || ""} onChange={(e) => handleWorkDescChange(e, i)} style={styles.input} />
               </div>
             ))}
-            <button type="button" onClick={() => handleAddField("work")} style={styles.addBtn}>
-              + Add Work
-            </button>
+            <button type="button" onClick={() => handleAddField("work")} style={styles.addBtn}>+ Add Work</button>
           </div>
 
-          {/* ---------- Projects ---------- */}
+          {/* Projects */}
           <div style={styles.section}>
             <h3 style={{ color: "#3b4bff" }}>Projects</h3>
             {formData.projects.map((proj, i) => (
               <div key={i} style={{ marginBottom: "1rem" }}>
-                <input
-                  placeholder="Title"
-                  value={proj.title}
-                  onChange={(e) => handleWorkChange(i, "title", e.target.value)}
-                  style={styles.input}
-                />
-                <input
-                  placeholder="Description (comma separated)"
-                  value={projectDescInputs[i] || ""}
-                  onChange={(e) => handleProjectDescChange(e, i)}
-                  style={styles.input}
-                />
+                <input placeholder="Title" value={proj.title} onChange={(e) => handleProjectChange(i, "title", e.target.value)} style={styles.input} />
+                <input placeholder="Description (comma separated)" value={projectDescInputs[i] || ""} onChange={(e) => handleProjectDescChange(e, i)} style={styles.input} />
               </div>
             ))}
-            <button type="button" onClick={() => handleAddField("projects")} style={styles.addBtn}>
-              + Add Project
-            </button>
+            <button type="button" onClick={() => handleAddField("projects")} style={styles.addBtn}>+ Add Project</button>
           </div>
 
           <button type="submit" style={styles.saveBtn}>Save Profile</button>
