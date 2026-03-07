@@ -1,0 +1,56 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage{xcolor}
+\definecolor{accentblue}{RGB}{59, 75, 255}
+\hypersetup{colorlinks=true, urlcolor=accentblue, linkcolor=accentblue}
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
+\usepackage{amsmath}
+\titleformat{\section}[block]{\large\bfseries}{}{0em}{\hrule\vspace{0.2em}}
+\titlespacing*{\section}{0pt}{0.5em}{0.1em}
+
+\begin{document}
+
+%==================== Header ====================
+\noindent
+{\Large \textbf{<<SENDER_NAME>>}} \\
+\small
+\href{mailto:<<SENDER_EMAIL>>}{<<SENDER_EMAIL>>} \textbar\
+<<SENDER_PHONE>> \textbar\
+<<SENDER_LOCATION>><<SENDER_LINKS>>
+
+\vspace{0.5em}
+
+%==================== Date ====================
+\normalsize
+\today
+
+\vspace{0.8em}
+
+%==================== Addressing ====================
+<<ADDRESSING_LINE>>
+
+\vspace{0.5em}
+
+%==================== Subject ====================
+\textbf{Re: <<JOB_TITLE>> Position at <<COMPANY_NAME>>}
+
+\vspace{0.8em}
+
+%==================== Body ====================
+<<COVER_LETTER_BODY>>
+
+\vspace{1.5em}
+
+Sincerely,
+
+\vspace{2em}
+
+\textbf{<<SENDER_NAME>>}
+
+\end{document}
