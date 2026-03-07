@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import axios from "axios";
 import wmLogo from "../assets/wm_logo.png"; // your logo
@@ -6,6 +5,7 @@ import wmLogo from "../assets/wm_logo.png"; // your logo
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // "success" or "error"
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,10 +20,11 @@ const Login = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("email", formData.email);
       setMessage("Login successful!");
+      setMessageType("success");
 
       try {
         const profileRes = await axios.get(
-          `http://127.0.0.1:8000/profile/${formData.email}`,
+          `http://127.0.0.1:8000/profile/`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -36,10 +37,12 @@ const Login = () => {
         } else {
           console.error(error);
           setMessage("Error checking profile.");
+          setMessageType("error");
         }
       }
     } catch (err) {
       setMessage(err.response?.data?.detail || "Login failed");
+      setMessageType("error");
     }
   };
 
@@ -74,7 +77,6 @@ const Login = () => {
       border: "1px solid #d1d5db",
       fontSize: "1rem",
       boxSizing: "border-box",
-
     },
     button: {
       width: "100%",
@@ -93,11 +95,6 @@ const Login = () => {
       color: "#6b7280", // grey color
       cursor: "pointer",
       textDecoration: "underline",
-    },
-    message: {
-      marginTop: "15px",
-      color: "red",
-      fontSize: "0.9rem",
     },
   };
 
@@ -132,7 +129,18 @@ const Login = () => {
         >
           Don't have an account? Sign up
         </div>
-        {message && <div style={styles.message}>{message}</div>}
+
+        {message && (
+          <div
+            style={{
+              marginTop: "15px",
+              fontSize: "0.9rem",
+              color: messageType === "success" ? "green" : "red",
+            }}
+          >
+            {message}
+          </div>
+        )}
       </div>
     </div>
   );
