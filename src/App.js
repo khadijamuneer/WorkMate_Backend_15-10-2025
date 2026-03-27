@@ -13,7 +13,8 @@ import TailorResumePage from "./pages/TailorResumePage";
 import InterviewMode from "./pages/InterviewMode";
 import TextInterview from "./pages/TextInterview";
 import CoverLetterPage from "./pages/CoverLetterPage";
-
+import VideoInterview from "./pages/VideoInterview";
+import InterviewHistory from "./pages/InterviewHistory";
 
 
 
@@ -34,6 +35,9 @@ function App() {
         <Route path="/interview" element={<InterviewMode/>}/>
         <Route path="/text-interview" element={<TextInterview />} />
         <Route path="/cover-letter" element={<CoverLetterPage />} />
+        <Route path="/video-interview" element={<VideoInterview />} />
+        <Route path="/interview-history" element={<InterviewHistory />} />
+
 
       </Routes>
     </Router>
