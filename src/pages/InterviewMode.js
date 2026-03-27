@@ -46,10 +46,19 @@ function InterviewMode() {
 
             {/* VIDEO INTERVIEW CARD (Coming Soon) */}
             <div
-              style={{ ...styles.card, ...styles.disabledCard }}
+              style={styles.card}
+              onClick={() => navigate("/video-interview", { state: { job } })}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-8px)";
+                e.currentTarget.style.boxShadow = "0 20px 40px rgba(59, 75, 255, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.08)";
+              }}
             >
               <div style={styles.iconContainer}>
-                <div style={{ ...styles.icon, backgroundColor: "#9ca3af" }}>
+                <div style={{ ...styles.icon, backgroundColor: "#3b4bff" }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
                     <rect x="2" y="5" width="14" height="14" rx="2" stroke="white" strokeWidth="2"/>
                     <path d="M16 10L22 7V17L16 14V10Z" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
