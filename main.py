@@ -14,6 +14,7 @@ from jobs.routes import router as jobs_router
 from resume_tailoring.routes import router as tailor_router
 from text_interview.routes import router as text_interview_router
 from cover_letter.routes import router as cover_letter_router
+from video_interview.routes import router as video_interview_router
 
 import os 
 
@@ -86,3 +87,4 @@ app.include_router(tailor_router)
 
 app.include_router(text_interview_router, prefix="/interview", tags=["Interview"])
 app.include_router(cover_letter_router)
+app.include_router(video_interview_router)
