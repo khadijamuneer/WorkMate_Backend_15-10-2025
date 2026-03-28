@@ -505,14 +505,7 @@ const VideoInterview = () => {
             {error && (
               <div style={{ background: "#fff1f2", color: "#ef4444", padding: "0.75rem", borderRadius: "10px", fontSize: "0.85rem", marginBottom: "1rem" }}>{error}</div>
             )}
-            <div style={{ background: "#f8f9ff", borderRadius: "12px", padding: "1rem", marginBottom: "1.5rem", textAlign: "left" }}>
-              <div style={{ fontSize: "0.72rem", fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>Questions Preview</div>
-              {questions.map((q, i) => (
-                <div key={i} style={{ fontSize: "0.85rem", color: "#374151", padding: "4px 0", borderBottom: i < questions.length-1 ? "1px solid #f3f4f6" : "none" }}>
-                  <span style={{ color: "#3b4bff", fontWeight: "700" }}>Q{i+1}.</span> {q}
-                </div>
-              ))}
-            </div>
+           
             <button onClick={handleStartInterview}
               style={{ width: "100%", padding: "0.875rem", background: "#3b4bff", color: "#fff", border: "none", borderRadius: "12px", fontWeight: "700", fontSize: "1rem", cursor: "pointer", fontFamily: "inherit" }}>
               Start Interview
