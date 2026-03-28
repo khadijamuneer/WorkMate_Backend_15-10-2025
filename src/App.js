@@ -15,6 +15,7 @@ import TextInterview from "./pages/TextInterview";
 import CoverLetterPage from "./pages/CoverLetterPage";
 import VideoInterview from "./pages/VideoInterview";
 import InterviewHistory from "./pages/InterviewHistory";
+import InterviewDetail from "./pages/InterviewDetail";
 
 
 
@@ -37,6 +38,7 @@ function App() {
         <Route path="/cover-letter" element={<CoverLetterPage />} />
         <Route path="/video-interview" element={<VideoInterview />} />
         <Route path="/interview-history" element={<InterviewHistory />} />
+        <Route path="/interview-detail/:id" element={<InterviewDetail />} />
 
 
       </Routes>
