@@ -1,0 +1,82 @@
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+from datetime import date
+from urllib.parse import unquote
+
+from .scraper import scrape_jobs
+from .matcher import match_jobs, precompute_job
+from models import JobScraped, Profile
+from database import SessionLocal, get_db
+
+router = APIRouter(prefix="/jobs", tags=["Jobs"])
+
+
+@router.get("/search")
+def search_jobs(query: str = Query(..., description="Job title or keywords"), db: Session = Depends(get_db)):
+    query = unquote(query)
+    jobs = scrape_jobs(query)
+
+    if not jobs:
+        return {"count": 0, "jobs": []}
+
+    try:
+        for job in jobs:
+            # skip duplicates by link
+            existing = db.query(JobScraped).filter(JobScraped.link == job.get("link")).first()
+            if existing:
+                continue
+
+            db_job = JobScraped(
+                title        = job.get("title"),
+                company      = job.get("company"),
+                location     = job.get("location"),
+                link         = job.get("link"),
+                preview_desc = job.get("preview_desc"),
+                full_desc    = job.get("full_desc"),
+                date_posted  = job.get("date_posted"),
+                skills       = job.get("skills") if isinstance(job.get("skills"), list) else [job.get("skills")],
+                date_scraped = date.today()
+            )
+            db.add(db_job)
+            db.flush()  # gives db_job an id before commit
+
+            # ── precompute embedding now, once, never again for this job ──
+            precompute_job(db_job, db)
+
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}
+
+    # ensure skills is always a list for frontend
+    jobs_for_frontend = []
+    for job in jobs:
+        job_copy = job.copy()
+        if not isinstance(job_copy.get("skills"), list):
+            job_copy["skills"] = [job_copy["skills"]]
+        jobs_for_frontend.append(job_copy)
+
+    return {"count": len(jobs_for_frontend), "jobs": jobs_for_frontend}
+
+
+@router.get("/match")
+def get_matched_jobs(email: str = Query(..., description="User email"), db: Session = Depends(get_db)):
+    # fetch user profile
+    profile = db.query(Profile).filter(Profile.user_email == email).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # only fetch jobs that have been precomputed — embedding is not null
+    job_orms = db.query(JobScraped).filter(JobScraped.embedding.isnot(None)).all()
+    if not job_orms:
+        return {"count": 0, "jobs": []}
+
+    user_data = {
+        "skills":   profile.skills or [],
+        "projects": profile.projects or []
+    }
+
+    # pass ORM objects directly — no dict conversion needed anymore
+    matched = match_jobs(user_data, job_orms)
+    return {"count": len(matched), "jobs": matched}
