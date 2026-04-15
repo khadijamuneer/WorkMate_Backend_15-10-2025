@@ -1,0 +1,151 @@
+from huggingface_hub import snapshot_download
+from sentence_transformers import SentenceTransformer
+import spacy, re, os
+import numpy as np
+import faiss
+from dotenv import load_dotenv
+import groq
+
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+client = groq.Client(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+# ── Models (loaded once at startup) ──────────────────────────────────────────
+model_path = snapshot_download("amjad-awad/skill-extractor", repo_type="model")
+nlp = spacy.load(model_path)
+embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def extract_skills(text: str):
+    if not text:
+        return []
+    doc = nlp(text)
+    return list({ent.text.lower() for ent in doc.ents if "SKILL" in ent.label_.upper()})
+
+def infer_experience_level(text: str):
+    levels = {"intern": 0.2, "junior": 0.5, "associate": 0.6,
+              "mid": 0.7, "senior": 0.9, "lead": 1.0}
+    text = (text or "").lower()
+    for k, v in levels.items():
+        if re.search(rf"\b{k}\b", text):
+            return v
+    return 0.7
+
+def serialize_vec(vec: np.ndarray) -> bytes:
+    """float32 ndarray → bytes for DB storage."""
+    return vec.astype("float32").tobytes()
+
+def deserialize_vec(data: bytes) -> np.ndarray:
+    """bytes → float32 ndarray."""
+    return np.frombuffer(data, dtype="float32")
+
+# ── Step A: called once when a job is first scraped ──────────────────────────
+def precompute_job(job_orm, db):
+    """
+    Compute and persist extracted_skills, exp_score, embedding
+    for a single JobScraped ORM object. Call this right after inserting a job.
+    """
+    job_text = f"{job_orm.title or ''} {job_orm.full_desc or ''}"
+    skills = extract_skills(job_text)
+
+    # skip non-tech jobs early
+    if len(skills) < 2:
+        job_orm.extracted_skills = []
+        job_orm.exp_score = 0.0
+        job_orm.embedding = None
+        db.commit()
+        return
+
+    exp = infer_experience_level(job_text)
+    embed_text = (
+        f"{job_orm.title or ''} {job_orm.full_desc or ''} "
+        f"Skills: {', '.join(job_orm.skills or [])}"
+    )
+    vec = embedder.encode([embed_text], normalize_embeddings=True)[0].astype("float32")
+
+    job_orm.extracted_skills = skills
+    job_orm.exp_score = exp
+    job_orm.embedding = serialize_vec(vec)
+    db.commit()
+
+
+# ── Step B: fast match — uses cached embeddings ───────────────────────────────
+def match_jobs(user: dict, job_orms: list, top_k: int = 10):
+    """
+    job_orms: list of JobScraped ORM objects that already have
+              extracted_skills, exp_score, embedding populated.
+    """
+    # ── user side (still computed fresh — it's just one vector) ──
+    projects_text = []
+    for p in user.get("projects", []):
+        if isinstance(p, dict):
+            desc = p.get("desc", "")
+            projects_text.extend(map(str, desc) if isinstance(desc, list) else [str(desc)])
+        else:
+            projects_text.append(str(p))
+
+    user_text = (
+        "Skills: " + ", ".join(map(str, user.get("skills", []))) +
+        ". Projects: " + " ".join(projects_text)
+    )
+    user_skills = set(extract_skills(user_text))
+    user_exp    = infer_experience_level(user_text)
+    user_vec    = embedder.encode(
+        [user_text], normalize_embeddings=True
+    )[0].astype("float32")
+
+    # ── filter to jobs that have cached embeddings ──
+    valid = [j for j in job_orms if j.embedding and j.extracted_skills]
+    if not valid:
+        return []
+
+    # ── rebuild FAISS from cached vectors (very fast — just memcpy) ──
+    job_vecs = np.stack([deserialize_vec(j.embedding) for j in valid])
+    faiss.normalize_L2(job_vecs)
+
+    index = faiss.IndexFlatIP(job_vecs.shape[1])
+    index.add(job_vecs)
+
+    scores, indices = index.search(
+        user_vec.reshape(1, -1), min(20, len(valid))
+    )
+
+    candidates = []
+    for rank, idx in enumerate(indices[0]):
+        job = valid[idx]
+        job_skills = set(job.extracted_skills or [])
+        skill_score = len(user_skills & job_skills) / len(job_skills) if job_skills else 0
+        exp_score   = 1 - abs(user_exp - (job.exp_score or 0.7))
+        final_score = (
+            0.6 * float(scores[0][rank]) +
+            0.25 * skill_score +
+            0.15 * exp_score
+        )
+        candidates.append({
+            "title":            job.title,
+            "company":          job.company,
+            "location":         job.location,
+            "link":             job.link,
+            "preview_desc":     job.preview_desc,
+            "full_desc":        job.full_desc,
+            "skills":           job.skills or [],
+            "date_posted":      job.date_posted,
+            "score":            round(final_score, 3),
+            "match_percentage": int(final_score * 100),
+            "cosine_similarity":round(float(scores[0][rank]), 3),
+        })
+
+    # ── optional Groq rerank ──────────────────────────────────────────────────
+    if client:
+        try:
+            docs = [
+                {"text": f"{c['title']} {c.get('full_desc','')}",
+                 "metadata": {"i": i}}
+                for i, c in enumerate(candidates)
+            ]
+            res = client.rerank(query=user_text, documents=docs, top_k=top_k)
+            return [candidates[r["document"]["metadata"]["i"]] for r in res["results"]]
+        except Exception as e:
+            print("Groq rerank failed, fallback:", e)
+
+    return sorted(candidates, key=lambda x: x["score"], reverse=True)[:top_k]
