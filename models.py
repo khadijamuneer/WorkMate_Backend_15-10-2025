@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from database import Base
 from sqlalchemy import Float, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy import LargeBinary 
 
 # -----------------------------
 # User Model
@@ -51,6 +52,9 @@ class JobScraped(Base):
 
     skills = Column(JSON)
     date_posted = Column(Date)
+    extracted_skills = Column(JSON, nullable=True) # cached NLP skills
+    embedding = Column(LargeBinary, nullable=True) # serialized float32 vector
+    exp_score = Column(Float, nullable=True) # cached experience score
 
 class InterviewResult(Base):
     __tablename__ = "interview_results"
