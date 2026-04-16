@@ -92,14 +92,17 @@ const Sidebar = ({ profile, onLogout }) => {
 
         .wm-sidebar {
           width: 220px;
-          min-height: 100vh;
+          height: 100vh;
           background: #ffffff;
           border-right: 1px solid #ebebf0;
           display: flex;
           flex-direction: column;
           padding: 0;
           font-family: 'DM Sans', sans-serif;
-          position: relative;
+          position: sticky;
+          top: 0;
+          aligned-self: flex-start;
+          z-index: 100;
         }
 
         .wm-sidebar::after {
