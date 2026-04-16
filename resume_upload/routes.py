@@ -172,3 +172,63 @@ def autofill_profile(
             os.remove(file_location)
 
     return {"detail": "Profile filled successfully"}
+
+
+@router.post("/extract")
+def extract_resume_only(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Extract resume data without saving to DB — for optimization use."""
+    if not file.filename.lower().endswith((".pdf", ".docx")):
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
+    file_location = f"temp_{datetime.now().timestamp()}_{file.filename}"
+    with open(file_location, "wb") as f:
+        f.write(file.file.read())
+
+    try:
+        if file.filename.lower().endswith(".pdf"):
+            text = extract_text_from_pdf(file_location)
+        else:
+            text = extract_text_from_docx(file_location)
+
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text")
+
+        text = re.sub(r'\r\n', '\n', text)
+        text = re.sub(r'\n\s+\n', '\n\n', text)
+
+        try:
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": PROMPT_SYSTEM},
+                    {"role": "user", "content": PROMPT_USER_TEMPLATE.format(text=text[:50000])}
+                ],
+                model="llama-3.1-8b-instant",
+                temperature=0.0,
+                max_tokens=1500
+            )
+            raw_output = chat_completion.choices[0].message.content
+            parsed = json.loads(raw_output)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error parsing resume: {e}")
+
+        # Force email from token, build same shape as profile response
+        parsed["personal_info"]["email"] = current_user.email
+
+        skills_list = []
+        if parsed["skills"] and parsed["skills"][0] != "not available":
+            skills_list = [s.strip() for s in parsed["skills"][0].split(",")]
+
+        return {
+            "personal_info": parsed["personal_info"],
+            "skills": skills_list,
+            "education": parsed["education"],
+            "work": parsed["work"],
+            "projects": parsed["projects"],
+        }
+
+    finally:
+        if os.path.exists(file_location):
+            os.remove(file_location)
