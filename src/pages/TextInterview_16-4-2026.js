@@ -362,7 +362,7 @@ function TextInterview() {
             <div style={S.spinner} />
             <p style={S.dimText}>Analysing your answers…</p>
             <p style={{ ...S.dimText, fontSize: 13, marginTop: 6, color: "#9ca3af" }}>
-              This takes just a few seconds.
+              Please wait a moment.
             </p>
           </div>
         )}
