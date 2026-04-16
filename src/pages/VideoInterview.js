@@ -182,7 +182,7 @@ const Dashboard = ({ results, questions, jobTitle, onRetry }) => {
                     <>
                       {/* sub-scores */}
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                        {[["Relevance", q.relevance], ["Clarity", q.clarity], ["Depth", q.depth], ["Structure", q.structure]].map(([l, v]) => (
+                        {[["Relevance", q.relevance], ["Clarity", q.clarity]].map(([l, v]) => (
                           <div key={l}>
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
                               <span style={{ fontSize: "0.7rem", color: "#9ca3af", fontWeight: "600" }}>{l}</span>
