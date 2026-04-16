@@ -285,7 +285,7 @@ const InterviewDetail = () => {
                 // Dynamically select the metrics to show per question based on type
                 const questionMetrics = isText 
                   ? [["Relevance", q.relevance], ["Clarity", q.clarity], ["Grammar", q.grammar]]
-                  : [["Relevance", q.relevance], ["Clarity", q.clarity], ["Depth", q.depth], ["Structure", q.structure]];
+                  : [["Relevance", q.relevance], ["Clarity", q.clarity]];
 
                 // Fallback to grab the user's answer text from common object keys
                 const userAnswerText = q.answer || q.transcript || q.response || "";
